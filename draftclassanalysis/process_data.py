@@ -34,6 +34,14 @@ def run():
                 'MIP_Votes'
             ]
         }, inplace=True)
+        df['round'] = 1
+        df['round_pick'] = df['PICK']
+        rp_mask = (df['PICK'] > 30) & (df['year'] > 2004)
+        df.loc[rp_mask, 'round_pick'] -= 30
+        rp_mask = (df['PICK'] > 29) & (df['year'] < 2005)
+        df.loc[rp_mask, 'round_pick'] -= 29
+        rp_mask = df['PICK'] > df['round_pick']
+        df.loc[rp_mask, 'round'] = 2
         df['retired'] = df.final_season != 2026
         df['rookie_first'] = df.rookie == 'first'
         df['rookie_second'] = df.rookie == 'second'
@@ -49,7 +57,7 @@ def run():
                 dc_df[new_col] = 0.0
                 group = dc_df[col][mask]
                 if group.sum() != 0.0:
-                    dc_df.loc[mask, new_col] = group/group.mean()
+                    dc_df.loc[mask, new_col] = (group - group.mean())/group.std()
                 dc_df.fillna({new_col: 0.0}, inplace=True)
             dc_dfs.append(dc_df)
 
@@ -64,7 +72,7 @@ def run():
                 pick_df[new_col] = 0.0
                 group = pick_df[col][mask]
                 if group.sum() != 0:
-                    pick_df.loc[mask, new_col] = group/group.mean()
+                    pick_df.loc[mask, new_col] = (group - group.mean())/group.std()
             pick_dfs.update({pick: pick_df})
 
     def add_trends():
@@ -89,7 +97,7 @@ def run():
     df['exists'] = 1
     df.replace({'TEAM': TEAM_REMAP}, inplace=True)
     df[[
-        'year', 'PICK', 'TEAM', 'PLAYER', 'YEARS', 'TOTALS_G', 'TOTALS_MP', 'final_season', 'ADVANCED_WS',
+        'year', 'PICK', 'round', 'round_pick', 'TEAM', 'PLAYER', 'YEARS', 'TOTALS_G', 'TOTALS_MP', 'final_season', 'ADVANCED_WS',
         'ADVANCED_WS/48', 'ADVANCED_BPM', 'ADVANCED_VORP', 'MVP_Votes', 'First_MVP', 'RotY_Votes', 'RotY', 'DPOY_Votes',
         'First_DPOY', 'SMotY_Votes', 'First_SMotY', 'MIP_Votes', 'First_MIP', 'all_nba_votes', 'all_defense_votes',
         'all_rookie_votes', 'all_first', 'all_second', 'all_third', 'all_races', 'def_first', 'def_second', 'mvp',
